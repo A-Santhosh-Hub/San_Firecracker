@@ -1,65 +1,71 @@
 import { useState, useEffect } from 'react';
 import { Firecracker } from '../types/firecracker';
-import { defaultFirecrackers } from '../data/defaultFirecrackers';
-
-const STORAGE_KEY = 'sancrackers_firecrackers';
+import { firecrackerAPI } from '../services/api';
 
 export const useFirecrackers = () => {
   const [firecrackers, setFirecrackers] = useState<Firecracker[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadFirecrackers();
   }, []);
 
-  const loadFirecrackers = () => {
+  const loadFirecrackers = async () => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setFirecrackers(JSON.parse(stored));
-      } else {
-        // Initialize with default data
-        setFirecrackers(defaultFirecrackers);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultFirecrackers));
-      }
+      setError(null);
+      const data = await firecrackerAPI.getAll();
+      setFirecrackers(data);
     } catch (error) {
       console.error('Error loading firecrackers:', error);
-      setFirecrackers(defaultFirecrackers);
+      setError('Failed to load firecrackers');
+      setFirecrackers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const addFirecracker = (firecracker: Omit<Firecracker, 'id'>) => {
-    const newFirecracker: Firecracker = {
-      ...firecracker,
-      id: Date.now().toString()
-    };
-    const updated = [...firecrackers, newFirecracker];
-    setFirecrackers(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    return newFirecracker;
+  const addFirecracker = async (firecracker: Omit<Firecracker, 'id'>) => {
+    try {
+      const newFirecracker = await firecrackerAPI.create(firecracker);
+      setFirecrackers(prev => [...prev, newFirecracker]);
+      return newFirecracker;
+    } catch (error) {
+      console.error('Error adding firecracker:', error);
+      throw error;
+    }
   };
 
-  const updateFirecracker = (id: string, updates: Partial<Firecracker>) => {
-    const updated = firecrackers.map(item =>
-      item.id === id ? { ...item, ...updates } : item
-    );
-    setFirecrackers(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  const updateFirecracker = async (id: string, updates: Partial<Firecracker>) => {
+    try {
+      const updatedFirecracker = await firecrackerAPI.update(id, updates);
+      setFirecrackers(prev => prev.map(item =>
+        item.id === id ? updatedFirecracker : item
+      ));
+      return updatedFirecracker;
+    } catch (error) {
+      console.error('Error updating firecracker:', error);
+      throw error;
+    }
   };
 
-  const removeFirecracker = (id: string) => {
-    const updated = firecrackers.filter(item => item.id !== id);
-    setFirecrackers(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  const removeFirecracker = async (id: string) => {
+    try {
+      await firecrackerAPI.delete(id);
+      setFirecrackers(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Error removing firecracker:', error);
+      throw error;
+    }
   };
 
   return {
     firecrackers,
     loading,
+    error,
     addFirecracker,
     updateFirecracker,
-    removeFirecracker
+    removeFirecracker,
+    refreshFirecrackers: loadFirecrackers
   };
 };

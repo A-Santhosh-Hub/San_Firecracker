@@ -4,6 +4,9 @@ export interface Firecracker {
   price: number;
   image: string;
   description?: string;
+  category?: string;
+  stock?: number;
+  isActive?: boolean;
 }
 
 export interface CartItem extends Firecracker {

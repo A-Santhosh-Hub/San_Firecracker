@@ -1,30 +1,9 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Save, X, LogOut, Sparkles } from 'lucide-react';
-import { Firecracker } from '../types/firecracker';
-import { useFirecrackers } from '../hooks/useFirecrackers';
-
-interface AdminDashboardProps {
-  onLogout: () => void;
-}
-
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+    return addFirecracker(firecracker);
   const { firecrackers, addFirecracker, updateFirecracker, removeFirecracker } = useFirecrackers();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    image: '',
-    description: ''
-  });
-
-  const resetForm = () => {
-    setFormData({ name: '', price: '', image: '', description: '' });
-    setShowAddForm(false);
-    setEditingId(null);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.price || !formData.image) {
@@ -38,23 +17,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       return;
     }
 
-    if (editingId) {
-      updateFirecracker(editingId, {
-        name: formData.name,
-        price,
-        image: formData.image,
-        description: formData.description
-      });
-    } else {
-      addFirecracker({
-        name: formData.name,
-        price,
-        image: formData.image,
-        description: formData.description
-      });
+    try {
+      if (editingId) {
+        await updateFirecracker(editingId, {
+          name: formData.name,
+          price,
+          image: formData.image,
+          description: formData.description
+        });
+      } else {
+        await addFirecracker({
+          name: formData.name,
+          price,
+          image: formData.image,
+          description: formData.description
+        });
+      }
+      resetForm();
+    } catch (error) {
+      alert('Error saving firecracker: ' + error.message);
     }
 
-    resetForm();
   };
 
   const startEdit = (firecracker: Firecracker) => {

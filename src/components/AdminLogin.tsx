@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Sparkles } from 'lucide-react';
+import { authAPI } from '../services/api';
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -15,15 +16,16 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
     setLoading(true);
     setError('');
 
-    // Simulate loading delay
-    setTimeout(() => {
-      if (password === '1922K1396santhosh*') {
+    authAPI.adminLogin(password)
+      .then(() => {
         onLogin();
-      } else {
-        setError('Invalid password. Please try again.');
-      }
-      setLoading(false);
-    }, 1000);
+      })
+      .catch((error) => {
+        setError(error.message || 'Invalid password. Please try again.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (

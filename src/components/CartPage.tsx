@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingCart, MessageCircle, Sparkles } from 'lucide-react';
 import { CartItem } from './CartItem';
 import { useCart } from '../context/CartContext';
+import { orderAPI } from '../services/api';
 
 export const CartPage: React.FC = () => {
   const { state, dispatch } = useCart();
@@ -9,7 +10,7 @@ export const CartPage: React.FC = () => {
   const [customerPhone, setCustomerPhone] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!customerName.trim() || !customerPhone.trim()) {
       alert('Please enter your name and phone number');
       return;
@@ -21,6 +22,25 @@ export const CartPage: React.FC = () => {
     }
 
     setIsProcessing(true);
+
+    try {
+      // Save order to database
+      const orderData = {
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        items: state.items.map(item => ({
+          firecrackerName: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          totalPrice: item.price * item.quantity
+        })),
+        totalAmount: state.total
+      };
+
+      await orderAPI.create(orderData);
+    } catch (error) {
+      console.error('Error saving order:', error);
+    }
 
     // Format the WhatsApp message
     const orderDetails = state.items.map(item => 
